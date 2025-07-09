@@ -29,6 +29,9 @@ function Attendance() {
             const response = await GlobalApi.GetAllAttendance();
             const data = response.data;
 
+
+            console.log("🟡 All Attendance Data:", data); // Add this line
+            
             if (!data || data.length === 0) {
                 alert("No attendance data found.");
                 return;
