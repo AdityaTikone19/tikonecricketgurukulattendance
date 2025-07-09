@@ -11,12 +11,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const router = useRouter();
 
+
+  const baseURL = process.env.NEXT_PUBLIC_APP_URL;
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const baseURL = window.location.hostname.includes("localhost")
-      ? "http://localhost:3000"
-      : "https://your-backend-domain.com";
 
     try {
       const res = await fetch(`${baseURL}/api/auth/login`, {
