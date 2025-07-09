@@ -26,35 +26,35 @@ function Attendance() {
 
     const handleDownloadAllAttendance = async () => {
         try {
-            const response = await GlobalApi.GetAllAttendance();
-            const data = response.data;
-
-            if (!data || data.length === 0) {
-                alert("No attendance data found.");
-                return;
-            }
-
-            const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Present"];
-            const rows = data.map((item) => [
-                item.studentId || "N/A",
-                item.name || "N/A",
-                item.grade || "N/A",
-                item.date || "N/A",
-                item.day || "N/A",
-                item.present ? "Present" : "Absent",
-            ]);
-
-            generateAttendancePDF({
-                title: "All Attendance Records",
-                columns,
-                rows,
-            });
-
+          const response = await GlobalApi.GetAllAttendance();
+          const data = response.data;
+      
+          if (!data || data.length === 0) {
+            alert("No attendance record found.");
+            return;
+          }
+      
+          const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Present"];
+          const rows = data.map((item) => [
+            item.studentId || "N/A",
+            item.name || "N/A",
+            item.grade || "N/A",
+            item.date || "N/A",
+            item.day || "N/A",
+            item.present ? "Present" : "Absent",
+          ]);
+      
+          generateAttendancePDF({
+            title: "All Attendance Records",
+            columns,
+            rows,
+          });
+      
         } catch (error) {
-            console.error("Error generating PDF:", error);
-            alert("Failed to generate PDF.");
+          console.error("Error generating PDF:", error);
+          alert("Failed to generate PDF.");
         }
-    };
+      };
 
     const handleDownloadPDF = () => {
         if (!attendanceList || attendanceList.length === 0) {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/utils";
 import { ATTENDANCE, STUDENTS } from "@/utils/schema";
-import { eq } from "drizzle-orm";
+import { eq, isNotNull } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -15,19 +15,10 @@ export async function GET() {
         present: ATTENDANCE.present,
       })
       .from(STUDENTS)
-      .leftJoin(ATTENDANCE, eq(STUDENTS.id, ATTENDANCE.studentId));
+      .leftJoin(ATTENDANCE, eq(STUDENTS.id, ATTENDANCE.studentId))
+      .where(isNotNull(ATTENDANCE.date)); // ✅ Only include students who have attendance
 
-    // Convert null attendance fields to safe values
-    const safeRecords = records.map((r) => ({
-      studentId: r.studentId,
-      name: r.name,
-      grade: r.grade,
-      date: r.date ?? "N/A",
-      day: r.day ?? "N/A",
-      present: r.present ?? false,
-    }));
-
-    return NextResponse.json(safeRecords);
+    return NextResponse.json(records);
   } catch (err) {
     console.error("❌ Failed to fetch all attendance:", err);
     return NextResponse.json({ error: "Failed to fetch data" }, { status: 500 });
