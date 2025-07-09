@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/utils";
 import { ATTENDANCE, STUDENTS } from "@/utils/schema";
-import { eq } from "drizzle-orm";
+import { eq, isNotNull } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -14,8 +14,9 @@ export async function GET() {
         day: ATTENDANCE.day,
         present: ATTENDANCE.present,
       })
-      .from(ATTENDANCE)
-      .innerJoin(STUDENTS, eq(STUDENTS.id, ATTENDANCE.studentId)); // Reverse the join
+      .from(STUDENTS)
+      .leftJoin(ATTENDANCE, eq(STUDENTS.id, ATTENDANCE.studentId))
+      .where(isNotNull(ATTENDANCE.date)); // ✅ Only include students who have attendance
 
     return NextResponse.json(records);
   } catch (err) {
