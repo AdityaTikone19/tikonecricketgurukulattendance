@@ -14,20 +14,10 @@ export async function GET() {
         day: ATTENDANCE.day,
         present: ATTENDANCE.present,
       })
-      .from(STUDENTS)
-      .leftJoin(ATTENDANCE, eq(STUDENTS.id, ATTENDANCE.studentId));
+      .from(ATTENDANCE)
+      .innerJoin(STUDENTS, eq(STUDENTS.id, ATTENDANCE.studentId)); // Reverse the join
 
-    // Convert null attendance fields to safe values
-    const safeRecords = records.map((r) => ({
-      studentId: r.studentId,
-      name: r.name,
-      grade: r.grade,
-      date: r.date ?? "N/A",
-      day: r.day ?? "N/A",
-      present: r.present ?? false,
-    }));
-
-    return NextResponse.json(safeRecords);
+    return NextResponse.json(records);
   } catch (err) {
     console.error("❌ Failed to fetch all attendance:", err);
     return NextResponse.json({ error: "Failed to fetch data" }, { status: 500 });
