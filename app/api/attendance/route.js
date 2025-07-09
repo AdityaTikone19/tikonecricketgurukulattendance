@@ -27,38 +27,16 @@ export async function GET(req){
     return NextResponse.json(result);
 }
 
-export async function POST(req, res) {
-    const data = await req.json();
-
-    const { studentId, present, day, date, grade, presentStudentIds } = data;
-
-    if (presentStudentIds && grade) {
-        // Bulk insert for all students in the grade
-        const students = await db
-            .select({ id: STUDENTS.id })
-            .from(STUDENTS)
-            .where(eq(STUDENTS.grade, grade));
-
-        const attendanceData = students.map((student) => ({
-            studentId: student.id,
-            present: presentStudentIds.includes(student.id),
-            day,
-            date,
-        }));
-
-       
-        const result = await db.insert(ATTENDANCE).values(attendanceData);
-        return NextResponse.json(result);
-    } else {
-        // Single student attendance (fallback)
-        const result = await db.insert(ATTENDANCE).values({
-            studentId,
-            present,
-            day,
-            date,
-        });
-        return NextResponse.json(result);
-    }
+export async function POST(req,res){
+    const data=await req.json();
+    const result=await db.insert(ATTENDANCE)
+    .values({
+        studentId:data.studentId,
+        present:data.present,
+        day:data.day,
+        date:data.date
+    })
+    return NextResponse.json(result);
 }
 
 export async function DELETE(req){
