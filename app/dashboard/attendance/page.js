@@ -16,6 +16,7 @@ function Attendance() {
     const [selectedMonth, setSelectedMonth] = useState();
     const [selectedGrade, setSelectedGrade] = useState();
     const [attendanceList, setAttendanceList] = useState();
+    const [isDownloading, setIsDownloading] = useState(false); // loading state
 
     const onSearchHandler = () => {
         const month = moment(selectedMonth).format('MM/YYYY');
@@ -26,35 +27,40 @@ function Attendance() {
 
     const handleDownloadAllAttendance = async () => {
         try {
-          const response = await GlobalApi.GetAllAttendance();
-          const data = response.data;
-      
-          if (!data || data.length === 0) {
-            alert("No attendance record found.");
-            return;
-          }
-      
-          const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Present"];
-          const rows = data.map((item) => [
-            item.studentId || "N/A",
-            item.name || "N/A",
-            item.grade || "N/A",
-            item.date || "N/A",
-            item.day || "N/A",
-            item.present ? "Present" : "Absent",
-          ]);
-      
-          generateAttendancePDF({
-            title: "All Attendance Records",
-            columns,
-            rows,
-          });
-      
+            setIsDownloading(true);
+
+            const response = await GlobalApi.GetAllAttendance(); // this now has ?ts= to bust cache
+            const data = response.data;
+
+            console.log("📥 Attendance data received for PDF:", data);
+
+            if (!data || data.length === 0) {
+                alert("No attendance record found.");
+                return;
+            }
+
+            const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Present"];
+            const rows = data.map((item) => [
+                item.studentId || "N/A",
+                item.name || "N/A",
+                item.grade || "N/A",
+                item.date || "N/A",
+                item.day || "N/A",
+                item.present,
+            ]);
+
+            generateAttendancePDF({
+                title: "All Attendance Records",
+                columns,
+                rows,
+            });
         } catch (error) {
-          console.error("Error generating PDF:", error);
-          alert("Failed to generate PDF.");
+            console.error("Error generating PDF:", error);
+            alert("Failed to generate PDF.");
+        } finally {
+            setIsDownloading(false);
         }
-      };
+    };
 
     const handleDownloadPDF = () => {
         if (!attendanceList || attendanceList.length === 0) {
@@ -63,7 +69,7 @@ function Attendance() {
         }
 
         const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Status"];
-        const rows = (attendanceList || []).map((item) => [
+        const rows = attendanceList.map((item) => [
             item.studentId || "N/A",
             item.name || "N/A",
             item.grade || "N/A",
@@ -92,20 +98,24 @@ function Attendance() {
                     <label>Select Age Group:</label>
                     <GradeSelect selectedGrade={(v) => setSelectedGrade(v)} />
                 </div>
-                <Button onClick={() => onSearchHandler()}>Search</Button>
+                <Button onClick={onSearchHandler}>Search</Button>
             </div>
 
             <AttendanceGrid attendanceList={attendanceList} selectedMonth={selectedMonth} />
 
             <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-center">
-                <Button onClick={handleDownloadPDF} className="bg-green-600 hover:bg-green-700 w-full md:w-auto">
+                <Button
+                    onClick={handleDownloadPDF}
+                    className="bg-green-600 hover:bg-green-700 w-full md:w-auto"
+                >
                     Download PDF
                 </Button>
                 <Button
                     onClick={handleDownloadAllAttendance}
                     className="bg-slate-600 hover:bg-slate-400 w-full md:w-auto"
+                    disabled={isDownloading}
                 >
-                    Download All Attendance PDF
+                    {isDownloading ? "Downloading..." : "Download All Attendance PDF"}
                 </Button>
             </div>
         </div>

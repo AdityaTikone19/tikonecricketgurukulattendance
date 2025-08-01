@@ -8,7 +8,8 @@ const GetAttendanceList = (grade, month) => axios.get(`/api/attendance?grade=${g
 const MarkAttendance=(data)=>axios.post('/api/attendance',data);
 const MarkAbsent=(studentId,day,date)=>axios.delete('/api/attendance?studentId='+studentId+"&day="+day+"&date="+date);
 const TotalPresentCountByDay=(date,grade)=>axios.get('/api/dashboard?date='+date+"&grade="+grade);
-const GetAllAttendance = () =>axios.get('/api/attendance/all');
+const GetAllAttendance = () =>
+  axios.get(`/api/attendance/all?ts=${Date.now()}`);
 
 export default {
   GetAllGrades,
