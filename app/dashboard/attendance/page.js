@@ -19,13 +19,13 @@ function Attendance() {
     const [selectedMonth, setSelectedMonth] = useState();
     const [selectedGrade, setSelectedGrade] = useState();
     const [attendanceList, setAttendanceList] = useState();
-    const [isDownloading, setIsDownloading] = useState(false); 
+    const [isDownloading, setIsDownloading] = useState(false);
 
     const onSearchHandler = () => {
         const month = moment(selectedMonth).format('MM/YYYY');
-    
+
         const toastId = toast.loading("Fetching attendance...");
-    
+
         GlobalApi.GetAttendanceList(selectedGrade, month).then((resp) => {
             setAttendanceList(resp.data);
             toast.success("Attendance loaded", { id: toastId });
@@ -36,57 +36,60 @@ function Attendance() {
     const router = useRouter();
 
     useEffect(() => {
-    const handleFocus = () => {
-        if (selectedGrade && selectedMonth) {
-            onSearchHandler();
+        const handleFocus = () => {
+            if (selectedGrade && selectedMonth) {
+                onSearchHandler();
+            }
+        };
+
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
+    }, [selectedGrade, selectedMonth]);
+
+
+    const handleDownloadAllAttendance = async () => {
+        const toastId = toast.loading("Generating PDF...");
+
+        try {
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const response = await fetch('/api/attendance/all?ts=' + Date.now(), {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-store',
+                },
+            });
+
+            const data = await response.json();
+
+            if (!data || data.length === 0) {
+                toast.error("No attendance record found", { id: toastId });
+                return;
+            }
+
+            const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Present"];
+            const rows = data.map((item) => [
+                item.studentId || "N/A",
+                item.name || "N/A",
+                item.grade || "N/A",
+                item.date || "N/A",
+                item.day || "N/A",
+                item.present,
+            ]);
+
+            generateAttendancePDF({
+                title: "All Attendance Records",
+                columns,
+                rows,
+            });
+
+            toast.success("PDF generated", { id: toastId });
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+            toast.error("Failed to generate PDF", { id: toastId });
         }
     };
 
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-}, [selectedGrade, selectedMonth]);
-
-
-const handleDownloadAllAttendance = async () => {
-    const toastId = toast.loading("Generating PDF...");
-  
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500)); // let DB settle
-      const response = await fetch('/api/attendance/all?ts=' + Date.now(), {
-        method: 'GET',
-        cache: 'no-store',
-      });
-  
-      const data = await response.json();
-  
-      if (!data || data.length === 0) {
-        toast.error("No attendance record found", { id: toastId });
-        return;
-      }
-  
-      const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Present"];
-      const rows = data.map((item) => [
-        item.studentId || "N/A",
-        item.name || "N/A",
-        item.grade || "N/A",
-        item.date || "N/A",
-        item.day || "N/A",
-        item.present,
-      ]);
-  
-      generateAttendancePDF({
-        title: "All Attendance Records",
-        columns,
-        rows,
-      });
-  
-      toast.success("PDF generated", { id: toastId });
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF", { id: toastId });
-    }
-  };
-  
 
     const handleDownloadPDF = () => {
         if (!attendanceList || attendanceList.length === 0) {
@@ -127,7 +130,12 @@ const handleDownloadAllAttendance = async () => {
                 <Button onClick={onSearchHandler}>Search</Button>
             </div>
 
-            <AttendanceGrid attendanceList={attendanceList} selectedMonth={selectedMonth} />
+            <AttendanceGrid
+                attendanceList={attendanceList}
+                selectedMonth={selectedMonth}
+                refreshData={onSearchHandler}
+            />
+            <AddNewStudent refreshData={onSearchHandler} />
 
             <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-center">
                 <Button

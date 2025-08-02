@@ -11,7 +11,7 @@ const pagination = true;
 const paginationPageSize = 10;
 const paginationPageSizeSelector = [25, 50, 100];
 
-function AttendanceGrid({ attendanceList, selectedMonth }) {
+function AttendanceGrid({ attendanceList, selectedMonth, refreshData }) {
   const [rowData, setRowData] = useState();
   const [colDefs, setColDefs] = useState([
     { field: 'studentId', filter: true },
@@ -99,6 +99,8 @@ function AttendanceGrid({ attendanceList, selectedMonth }) {
             date,
           }),
         });
+
+        refreshData?.();
       });
     } else {
       GlobalApi.MarkAbsent(studentId, day, attendanceData.date).then((resp) => {
