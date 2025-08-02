@@ -7,7 +7,6 @@ export async function GET() {
   try {
     console.log("📥 Fetching all attendance at", new Date().toISOString());
 
-    // Use INNER JOIN to exclude orphaned records
     const records = await db
       .select({
         studentId: STUDENTS.id,
@@ -17,32 +16,44 @@ export async function GET() {
         day: ATTENDANCE.day,
         present: ATTENDANCE.present,
       })
-      .from(ATTENDANCE)
-      .innerJoin(STUDENTS, eq(STUDENTS.id, ATTENDANCE.studentId));
+      .from(STUDENTS)
+      .leftJoin(ATTENDANCE, eq(STUDENTS.id, ATTENDANCE.studentId));
 
-    // Sort by most recent
-    const sortedList = records.sort(
-      (a, b) => new Date(b.date || "").getTime() - new Date(a.date || "").getTime()
-    );
+    const groupedByStudent = new Map();
 
-    const cleanedList = sortedList.map((record) => ({
-      studentId: record.studentId,
-      name: record.name,
-      grade: record.grade,
-      date: record.date ?? "N/A",
-      day: record.day ?? "N/A",
-      present:
-        record.present === true
-          ? "Present"
-          : record.present === false
-          ? "Absent"
-          : "No Record",
-    }));
+    for (const record of records) {
+      if (!groupedByStudent.has(record.studentId)) {
+        groupedByStudent.set(record.studentId, []);
+      }
 
-    return new NextResponse(JSON.stringify(cleanedList), {
+      groupedByStudent.get(record.studentId).push({
+        studentId: record.studentId,
+        name: record.name,
+        grade: record.grade,
+        date: record.date ?? "N/A",
+        day: record.day ?? "N/A",
+        present:
+          record.present === true
+            ? "Present"
+            : record.present === false
+            ? "Absent"
+            : "No Record",
+      });
+    }
+
+    const finalList = Array.from(groupedByStudent.values())
+      .flat()
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    console.log("✅ Final attendance list length:", finalList.length);
+
+    return new NextResponse(JSON.stringify(finalList), {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-store",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+        "Surrogate-Control": "no-store",
       },
     });
   } catch (err) {
