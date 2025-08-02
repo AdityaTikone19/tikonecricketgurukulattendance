@@ -77,9 +77,11 @@ function StudentListTable({ studentList, refreshData }) {
   }, [studentList]);
 
   const DeleteRecord = (id) => {
-    GlobalApi.DeleteStudentRecord(studentId).then(() => {
-      toast.success("Student deleted");
-      refreshData(); 
+    GlobalApi.DeleteStudentRecord(id).then(resp => {
+      if (resp) {
+        toast('Record deleted successfully !');
+        refreshData();
+      }
     });
   };
 

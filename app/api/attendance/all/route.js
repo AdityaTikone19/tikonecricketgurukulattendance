@@ -43,12 +43,12 @@ export async function GET() {
 
     const finalList = Array.from(groupedByStudent.values())
       .flat()
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      .sort((a, b) => new Date(b.date) - new Date(a.date)); // optional: sort newest first
 
     return new NextResponse(JSON.stringify(finalList), {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-store", // ✅ disables browser cache
+        "Cache-Control": "no-store",
       },
     });
   } catch (err) {

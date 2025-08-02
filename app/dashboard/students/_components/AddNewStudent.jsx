@@ -19,7 +19,6 @@ function AddNewStudent({ refreshData }) {
   const [open, setOpen] = useState(false);
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -39,6 +38,7 @@ function AddNewStudent({ refreshData }) {
     });
   };
 
+  // Watch date of birth field
   const dateOfBirth = watch("dateOfBirth");
 
   useEffect(() => {
@@ -65,20 +65,22 @@ function AddNewStudent({ refreshData }) {
     setLoading(true);
     GlobalApi.CreateNewStudent(data).then(async (resp) => {
       if (resp.data) {
+        // Send email
         await fetch("/api/send-student-email", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: data.name, email: data.email }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: data.name,
+            email: data.email,
+          }),
         });
 
         reset();
+        refreshData();
         setOpen(false);
-        toast.success('New Student Added!');
-
-        // 🔁 Refresh attendance list or PDF data
-        if (typeof refreshData === 'function') {
-          refreshData();
-        }
+        toast('New Student Added!');
       }
       setLoading(false);
     });
