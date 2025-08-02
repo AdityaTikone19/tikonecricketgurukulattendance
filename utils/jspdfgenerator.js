@@ -1,32 +1,76 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"; // ✅ Correct way to import the plugin
+import "jspdf-autotable";
+import moment from "moment";
+import { logoBase64 } from "./logo"; // Ensure base64 image is imported
 
-/**
- * Generates a simple PDF using jsPDF and autoTable
- * @param {Object} param0
- * @param {string} param0.title
- * @param {string[]} param0.columns
- * @param {Array[]} param0.rows
- */
 export function generatePDF({ title, columns, rows }) {
   try {
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const currentDate = moment().format("MMMM Do YYYY, h:mm A");
 
+    // 🔹 Add logo
+    const logoWidth = 30;
+    doc.addImage(logoBase64, "PNG", 10, 10, logoWidth, 15);
+
+    // 🔹 Brand name
     doc.setFontSize(16);
-    doc.text(title || "Attendance Report", 14, 20);
+    doc.setFont("helvetica", "bold");
+    doc.text("Tikone Cricket Gurukul", pageWidth / 2, 20, { align: "center" });
 
-    autoTable(doc, {
+    // 🔹 Current date on top-right
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(currentDate, pageWidth - 10, 15, { align: "right" });
+
+    // 🔹 Title
+    doc.setFontSize(14);
+    doc.setTextColor(40);
+    doc.setFont("helvetica", "bold");
+    doc.text(title || "Attendance Report", pageWidth / 2, 30, {
+      align: "center",
+    });
+
+    // 🔹 Table
+    doc.autoTable({
       head: [columns],
       body: rows,
-      startY: 30,
-      styles: { fontSize: 10 },
+      startY: 40,
+      styles: { fontSize: 10, halign: "center" },
       headStyles: {
         fillColor: [41, 128, 185],
         textColor: 255,
-        halign: 'center',
+        halign: "center",
       },
       alternateRowStyles: { fillColor: [245, 245, 245] },
-      bodyStyles: { halign: 'center' },
+      margin: { top: 40 },
+      didDrawPage: function (data) {
+        // 🔹 Footer
+        const pageCount = doc.internal.getNumberOfPages();
+        const page = doc.internal.getCurrentPageInfo().pageNumber;
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+          `Computerized Generated PDF on ${currentDate}`,
+          10,
+          doc.internal.pageSize.getHeight() - 10
+        );
+        doc.text(
+          `Page ${page} of ${pageCount}`,
+          pageWidth - 10,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: "right" }
+        );
+
+        // 🔹 Optional watermark
+        doc.setTextColor(220);
+        doc.setFontSize(40);
+        doc.setFont("helvetica", "bold");
+        doc.text("Tikone Gurukul", pageWidth / 2, 130, {
+          align: "center",
+          angle: 45,
+        });
+      },
     });
 
     const fileName = `${(title || "attendance_report")
@@ -35,6 +79,6 @@ export function generatePDF({ title, columns, rows }) {
     doc.save(fileName);
   } catch (err) {
     console.error("❌ Error in generatePDF:", err);
-    throw err;
+    alert("Failed to generate PDF.");
   }
 }
