@@ -8,6 +8,8 @@ import GlobalApi from '@/app/_services/GlobalApi';
 import { Button } from '@/components/ui/button';
 import moment from 'moment';
 import React, { useState } from 'react';
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import AttendanceGrid from './_components/AttendanceGrid';
 
 pdfMake.vfs = pdfFonts.vfs;
@@ -27,41 +29,48 @@ function Attendance() {
 
     const handleDownloadAllAttendance = async () => {
         try {
-            setIsDownloading(true);
-
-            const response = await GlobalApi.GetAllAttendance(); // this now has ?ts= to bust cache
-            const data = response.data;
-
-            console.log("📥 Attendance data received for PDF:", data);
-
-            if (!data || data.length === 0) {
-                alert("No attendance record found.");
-                return;
-            }
-
-            const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Present"];
-            const rows = data.map((item) => [
-                item.studentId || "N/A",
-                item.name || "N/A",
-                item.grade || "N/A",
-                item.date || "N/A",
-                item.day || "N/A",
-                item.present,
-            ]);
-
-            generateAttendancePDF({
-                title: "All Attendance Records",
-                columns,
-                rows,
-            });
+          setIsDownloading(true);
+      
+          const response = await GlobalApi.GetAllAttendance(); // always fresh due to timestamp
+          const data = response.data;
+      
+          if (!data || data.length === 0) {
+            alert("No attendance record found.");
+            return;
+          }
+      
+          const doc = new jsPDF();
+      
+          doc.setFontSize(18);
+          doc.text("All Attendance Records", 14, 20);
+      
+          const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Status"];
+          const rows = data.map((item) => [
+            item.studentId,
+            item.name,
+            item.grade,
+            item.date,
+            item.day,
+            item.present,
+          ]);
+      
+          doc.autoTable({
+            startY: 30,
+            head: [columns],
+            body: rows,
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [22, 160, 133] },
+          });
+      
+          doc.save("attendance_records.pdf");
         } catch (error) {
-            console.error("Error generating PDF:", error);
-            alert("Failed to generate PDF.");
+          console.error("Error generating PDF:", error);
+          alert("Failed to generate PDF.");
         } finally {
-            setIsDownloading(false);
+          setIsDownloading(false);
         }
-    };
-
+      };
+      
     const handleDownloadPDF = () => {
         if (!attendanceList || attendanceList.length === 0) {
             alert("No attendance data to export.");
