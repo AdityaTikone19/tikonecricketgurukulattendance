@@ -46,43 +46,47 @@ function Attendance() {
     return () => window.removeEventListener('focus', handleFocus);
 }, [selectedGrade, selectedMonth]);
 
+
 const handleDownloadAllAttendance = async () => {
     const toastId = toast.loading("Generating PDF...");
-
+  
     try {
-        // ✅ Wait briefly to let DB changes settle
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        const response = await GlobalApi.GetAllAttendance(); // uses cache-busting
-        const data = response.data;
-
-        if (!data || data.length === 0) {
-            toast.error("No attendance record found", { id: toastId });
-            return;
-        }
-
-        const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Present"];
-        const rows = data.map((item) => [
-            item.studentId || "N/A",
-            item.name || "N/A",
-            item.grade || "N/A",
-            item.date || "N/A",
-            item.day || "N/A",
-            item.present,
-        ]);
-
-        generateAttendancePDF({
-            title: "All Attendance Records",
-            columns,
-            rows,
-        });
-
-        toast.success("PDF generated", { id: toastId });
+      await new Promise(resolve => setTimeout(resolve, 500)); // let DB settle
+      const response = await fetch('/api/attendance/all?ts=' + Date.now(), {
+        method: 'GET',
+        cache: 'no-store',
+      });
+  
+      const data = await response.json();
+  
+      if (!data || data.length === 0) {
+        toast.error("No attendance record found", { id: toastId });
+        return;
+      }
+  
+      const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Present"];
+      const rows = data.map((item) => [
+        item.studentId || "N/A",
+        item.name || "N/A",
+        item.grade || "N/A",
+        item.date || "N/A",
+        item.day || "N/A",
+        item.present,
+      ]);
+  
+      generateAttendancePDF({
+        title: "All Attendance Records",
+        columns,
+        rows,
+      });
+  
+      toast.success("PDF generated", { id: toastId });
     } catch (error) {
-        console.error("Error generating PDF:", error);
-        toast.error("Failed to generate PDF", { id: toastId });
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF", { id: toastId });
     }
-};
+  };
+  
 
     const handleDownloadPDF = () => {
         if (!attendanceList || attendanceList.length === 0) {
