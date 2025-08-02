@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import moment from "moment";
-import { logoBase64 } from "./logo"; // Your logo string
+import { logoBase64 } from "./logo";
 
 export function generatePDF({ title, columns, rows }) {
   try {
@@ -15,27 +15,29 @@ export function generatePDF({ title, columns, rows }) {
     const pageHeight = doc.internal.pageSize.getHeight();
     const currentDate = moment().format("MMMM Do YYYY, h:mm A");
 
-    // 🔹 Header with Logo, Title, and Date
-    const logoWidth = 30;
-    const logoHeight = 15;
-    doc.addImage(logoBase64, "JPEG", 10, 10, logoWidth, logoHeight);
+    // Logo
+    doc.addImage(logoBase64, "JPEG", 10, 10, 30, 15);
 
+    // Brand Name
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text("Tikone Cricket Gurukul", pageWidth / 2, 20, { align: "center" });
 
+    // Date
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(currentDate, pageWidth - 10, 15, { align: "right" });
 
-    // 🔹 Title below header
+    // Title
     doc.setFontSize(14);
     doc.setTextColor(40);
     doc.setFont("helvetica", "bold");
-    doc.text(title || "Attendance Report", pageWidth / 2, 30, { align: "center" });
+    doc.text(title || "Attendance Report", pageWidth / 2, 30, {
+      align: "center",
+    });
 
-    // 🔹 Table
-    doc.autoTable({
+    // Table
+    autoTable(doc, {
       head: [columns],
       body: rows,
       startY: 40,
@@ -51,7 +53,7 @@ export function generatePDF({ title, columns, rows }) {
         const pageCount = doc.internal.getNumberOfPages();
         const page = doc.internal.getCurrentPageInfo().pageNumber;
 
-        // 🔹 Footer
+        // Footer
         doc.setFontSize(8);
         doc.setTextColor(150);
         doc.text(
@@ -66,7 +68,7 @@ export function generatePDF({ title, columns, rows }) {
           { align: "right" }
         );
 
-        // 🔹 Watermark
+        // Watermark
         doc.setTextColor(220);
         doc.setFontSize(40);
         doc.setFont("helvetica", "bold");
@@ -77,7 +79,6 @@ export function generatePDF({ title, columns, rows }) {
       },
     });
 
-    // 🔹 Save file
     const fileName = `${(title || "attendance_report")
       .replace(/\s+/g, "_")
       .toLowerCase()}.pdf`;
