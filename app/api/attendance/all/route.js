@@ -3,6 +3,9 @@ import { db } from "@/utils";
 import { ATTENDANCE, STUDENTS } from "@/utils/schema";
 import { eq } from "drizzle-orm";
 
+// ⬅️ This line disables static rendering and forces fresh data
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     console.log("📥 Fetching all attendance at", new Date().toISOString());
@@ -48,7 +51,7 @@ export async function GET() {
     return new NextResponse(JSON.stringify(finalList), {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-store",
+        "Cache-Control": "no-store", // 🛑 This disables browser/server caching
       },
     });
   } catch (err) {
