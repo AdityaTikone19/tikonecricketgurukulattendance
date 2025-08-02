@@ -8,9 +8,8 @@ import GlobalApi from '@/app/_services/GlobalApi';
 import { Button } from '@/components/ui/button';
 import moment from 'moment';
 import React, { useState } from 'react';
-import jsPDF from "jspdf";
+
 import "jspdf-autotable";
-import { generatePDF } from "@/utils/jspdfgenerator";
 import AttendanceGrid from './_components/AttendanceGrid';
 
 pdfMake.vfs = pdfFonts.vfs;
@@ -30,49 +29,42 @@ function Attendance() {
 
     const handleDownloadAllAttendance = async () => {
         try {
-            setIsDownloading(true);
-
-            const response = await GlobalApi.GetAllAttendance();
-            const data = response.data;
-
-            if (!data || data.length === 0) {
-                alert("No attendance record found.");
-                return;
-            }
-
-            const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Status"];
-            const rows = data.map((item) => [
-                item.studentId || "N/A",
-                item.name || "N/A",
-                item.grade || "N/A",
-                item.date || "N/A",
-                item.day || "N/A",
-                item.present === true
-                    ? "Present"
-                    : item.present === false
-                        ? "Absent"
-                        : "No Record",
-            ]);
-
-            // ✅ Add try/catch here
-            try {
-                generatePDF({
-                    title: "All Attendance Records",
-                    columns,
-                    rows,
-                });
-            } catch (pdfErr) {
-                console.error("❌ PDF generation error:", pdfErr);
-                alert("Error inside PDF generator");
-            }
-
+          setIsDownloading(true);
+      
+          const response = await GlobalApi.GetAllAttendance();
+          const data = response.data;
+      
+          if (!data || data.length === 0) {
+            alert("No attendance record found.");
+            return;
+          }
+      
+          const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Status"];
+          const rows = data.map((item) => [
+            item.studentId || "N/A",
+            item.name || "N/A",
+            item.grade || "N/A",
+            item.date || "N/A",
+            item.day || "N/A",
+            item.present || "N/A",
+          ]);
+      
+          // ✅ Dynamically import on client only
+          const { generatePDF } = await import("@/utils/jspdfgenerator");
+          generatePDF({
+            title: "All Attendance Records",
+            columns,
+            rows,
+          });
+      
         } catch (error) {
-            console.error("❌ Error fetching attendance:", error);
-            alert("Failed to fetch attendance data.");
+          console.error("❌ Error generating PDF:", error);
+          alert("Failed to generate PDF.");
         } finally {
-            setIsDownloading(false);
+          setIsDownloading(false);
         }
-    };
+      };
+      
 
     const handleDownloadPDF = () => {
         if (!attendanceList || attendanceList.length === 0) {
