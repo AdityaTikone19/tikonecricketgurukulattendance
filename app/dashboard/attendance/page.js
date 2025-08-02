@@ -50,12 +50,14 @@ function Attendance() {
           ]);
       
           // ✅ Dynamically import on client only
-          const { generatePDF } = await import("@/utils/jspdfgenerator");
-          generatePDF({
+          const pdf = await import("@/utils/jspdfgenerator");
+          console.log("📄 generatePDF is:", typeof pdf.generatePDF); // should log "function"
+          pdf.generatePDF({
             title: "All Attendance Records",
             columns,
             rows,
           });
+          
       
         } catch (error) {
           console.error("❌ Error generating PDF:", error);
