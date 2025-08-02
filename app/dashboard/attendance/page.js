@@ -31,8 +31,12 @@ function Attendance() {
         try {
           setIsDownloading(true);
       
-          const response = await GlobalApi.GetAllAttendance();
-          const data = response.data;
+          const response = await fetch("/api/attendance/all", {
+            cache: "no-store",
+            next: { revalidate: 0 },
+          });
+      
+          const data = await response.json();
       
           if (!data || data.length === 0) {
             alert("No attendance record found.");
@@ -46,19 +50,15 @@ function Attendance() {
             item.grade || "N/A",
             item.date || "N/A",
             item.day || "N/A",
-            item.present || "N/A",
+            item.present ? "Present" : "Absent",
           ]);
       
-          // ✅ Dynamically import on client only
-          const pdf = await import("@/utils/jspdfgenerator");
-          console.log("📄 generatePDF is:", typeof pdf.generatePDF); // should log "function"
-          pdf.generatePDF({
+          const { generatePDF } = await import("@/utils/jspdfgenerator");
+          generatePDF({
             title: "All Attendance Records",
             columns,
             rows,
           });
-          
-      
         } catch (error) {
           console.error("❌ Error generating PDF:", error);
           alert("Failed to generate PDF.");
@@ -66,7 +66,6 @@ function Attendance() {
           setIsDownloading(false);
         }
       };
-      
 
     const handleDownloadPDF = () => {
         if (!attendanceList || attendanceList.length === 0) {
