@@ -2,6 +2,9 @@
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { generateAttendancePDF } from "@/utils/pdfGenerator";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import GradeSelect from '@/app/_components/GradeSelect';
 import MonthSelection from '@/app/_components/MonthSelection';
 import GlobalApi from '@/app/_services/GlobalApi';
@@ -16,29 +19,45 @@ function Attendance() {
     const [selectedMonth, setSelectedMonth] = useState();
     const [selectedGrade, setSelectedGrade] = useState();
     const [attendanceList, setAttendanceList] = useState();
-    const [isDownloading, setIsDownloading] = useState(false); // loading state
+    const [isDownloading, setIsDownloading] = useState(false); 
 
     const onSearchHandler = () => {
         const month = moment(selectedMonth).format('MM/YYYY');
+    
+        const toastId = toast.loading("Fetching attendance...");
+    
         GlobalApi.GetAttendanceList(selectedGrade, month).then((resp) => {
             setAttendanceList(resp.data);
+            toast.success("Attendance loaded", { id: toastId });
+        }).catch(() => {
+            toast.error("Failed to load attendance", { id: toastId });
         });
     };
+    const router = useRouter();
+
+    useEffect(() => {
+    const handleFocus = () => {
+        if (selectedGrade && selectedMonth) {
+            onSearchHandler();
+        }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+}, [selectedGrade, selectedMonth]);
 
     const handleDownloadAllAttendance = async () => {
+        const toastId = toast.loading("Generating PDF...");
+    
         try {
-            setIsDownloading(true);
-
-            const response = await GlobalApi.GetAllAttendance(); // this now has ?ts= to bust cache
+            const response = await GlobalApi.GetAllAttendance(); // timestamp added in service
             const data = response.data;
-
-            console.log("📥 Attendance data received for PDF:", data);
-
+    
             if (!data || data.length === 0) {
-                alert("No attendance record found.");
+                toast.error("No attendance record found", { id: toastId });
                 return;
             }
-
+    
             const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Present"];
             const rows = data.map((item) => [
                 item.studentId || "N/A",
@@ -48,17 +67,17 @@ function Attendance() {
                 item.day || "N/A",
                 item.present,
             ]);
-
+    
             generateAttendancePDF({
                 title: "All Attendance Records",
                 columns,
                 rows,
             });
+    
+            toast.success("PDF generated", { id: toastId });
         } catch (error) {
             console.error("Error generating PDF:", error);
-            alert("Failed to generate PDF.");
-        } finally {
-            setIsDownloading(false);
+            toast.error("Failed to generate PDF", { id: toastId });
         }
     };
 
@@ -113,9 +132,14 @@ function Attendance() {
                 <Button
                     onClick={handleDownloadAllAttendance}
                     className="bg-slate-600 hover:bg-slate-400 w-full md:w-auto"
-                    disabled={isDownloading}
                 >
-                    {isDownloading ? "Downloading..." : "Download All Attendance PDF"}
+                    Download All Attendance PDF
+                </Button>
+                <Button
+                    onClick={onSearchHandler}
+                    className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto"
+                >
+                    🔄 Refresh Attendance
                 </Button>
             </div>
         </div>
