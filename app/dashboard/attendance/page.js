@@ -31,7 +31,7 @@ function Attendance() {
         try {
           setIsDownloading(true);
       
-          const response = await GlobalApi.GetAllAttendance(); // always fresh due to timestamp
+          const response = await GlobalApi.GetAllAttendance();
           const data = response.data;
       
           if (!data || data.length === 0) {
@@ -39,38 +39,36 @@ function Attendance() {
             return;
           }
       
-          const doc = new jsPDF();
-      
-          doc.setFontSize(18);
-          doc.text("All Attendance Records", 14, 20);
-      
           const columns = ["Student ID", "Name", "Grade", "Date", "Day", "Status"];
           const rows = data.map((item) => [
-            item.studentId,
-            item.name,
-            item.grade,
-            item.date,
-            item.day,
-            item.present,
+            item.studentId || "N/A",
+            item.name || "N/A",
+            item.grade || "N/A",
+            item.date || "N/A",
+            item.day || "N/A",
+            item.present || "N/A",
           ]);
       
-          doc.autoTable({
-            startY: 30,
-            head: [columns],
-            body: rows,
-            styles: { fontSize: 10 },
-            headStyles: { fillColor: [22, 160, 133] },
-          });
+          // ✅ Add try/catch here
+          try {
+            generateAttendancePDF({
+              title: "All Attendance Records",
+              columns,
+              rows,
+            });
+          } catch (pdfErr) {
+            console.error("❌ PDF generation error:", pdfErr);
+            alert("Error inside PDF generator");
+          }
       
-          doc.save("attendance_records.pdf");
         } catch (error) {
-          console.error("Error generating PDF:", error);
-          alert("Failed to generate PDF.");
+          console.error("❌ Error fetching attendance:", error);
+          alert("Failed to fetch attendance data.");
         } finally {
           setIsDownloading(false);
         }
       };
-      
+
     const handleDownloadPDF = () => {
         if (!attendanceList || attendanceList.length === 0) {
             alert("No attendance data to export.");
